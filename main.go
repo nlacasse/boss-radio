@@ -132,7 +132,7 @@ func loop(scrn *screen.Screen, btn *button.Button) error {
 		// Back to station screen.
 		status := stn.Status()
 		scrn.SetText([6]string{
-			stn.Name(),
+			"     " + stn.Name(),
 			"",
 			status.Show,
 			status.Artist,
