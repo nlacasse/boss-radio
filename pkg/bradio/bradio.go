@@ -3,7 +3,6 @@ package bradio
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"time"
 
@@ -84,13 +83,12 @@ func (br *BossRadio) power() error {
 		br.state = stateOff
 		br.cmd.Process.Kill()
 		br.cmd = nil
-		br.scrn.Clear()
+		br.showClock()
 		return nil
 	}
 
 	// Turning on.
 	br.state = stateOn
-
 	return br.play()
 }
 
@@ -105,7 +103,31 @@ func (br *BossRadio) Run() error {
 	}
 	defer br.stop()
 
-	for push := range pushChan {
+	// We start in off mode. Just show the clock.
+	br.showClock()
+
+	// Tick every 30 seconds to update the status screen or clock.
+	statusUpdateTicker := time.NewTicker(30 * time.Second)
+	defer statusUpdateTicker.Stop()
+
+	for {
+		var push button.PushDirection
+
+		select {
+		case <-statusUpdateTicker.C:
+			if br.isOff() {
+				log.Printf("Updating clock due to ticker")
+				br.showClock()
+				continue
+			}
+			log.Printf("Updating status due to ticker")
+			br.showStatus()
+			continue
+
+		case push = <-pushChan:
+			// Handled below:
+		}
+
 		// Always handle power button.
 		if push == button.Center {
 			if err := br.power(); err != nil {
@@ -162,12 +184,18 @@ func (br *BossRadio) showStatus() {
 	br.scrn.Draw()
 }
 
+func (br *BossRadio) showClock() {
+	now := time.Now()
+	br.scrn.ClearText()
+	br.scrn.SetTextLine(3, "  "+now.Format("Jan 2 15:04"))
+	br.scrn.Draw()
+}
+
 func (br *BossRadio) play() error {
 	stn := br.stns[br.stnIdx]
 	br.stop()
 	br.cmd = exec.Command("mpv", "-no-video", stn.Stream())
 	log.Printf("COMMAND: %+v", br.cmd)
-	br.cmd.Stdout = os.Stdout
 	if err := br.cmd.Start(); err != nil {
 		return err
 	}
