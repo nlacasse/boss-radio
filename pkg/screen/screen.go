@@ -52,6 +52,10 @@ func (s *Screen) SetText(text [6]string) {
 	s.buffer = text
 }
 
+func (s *Screen) ClearText() {
+	s.SetText([6]string{})
+}
+
 func (s *Screen) SetTextLine(i int, text string) {
 	if i < 0 || i > 5 {
 		panic(fmt.Sprintf("invalid line %d", i))

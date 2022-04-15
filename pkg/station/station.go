@@ -2,7 +2,7 @@ package station
 
 import "image"
 
-var Stations = []Station{NewKfjc(), NewWfmu(), NewWmbr()}
+var AllStations = []Station{NewKfjc(), NewWfmu(), NewWmbr()}
 
 type Station interface {
 	Name() string
