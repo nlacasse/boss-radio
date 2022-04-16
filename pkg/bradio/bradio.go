@@ -187,7 +187,7 @@ func (br *BossRadio) showStatus() {
 func (br *BossRadio) showClock() {
 	now := time.Now()
 	br.scrn.ClearText()
-	br.scrn.SetTextLine(3, "  "+now.Format("Jan 2 15:04"))
+	br.scrn.SetTextLine(2, "  "+now.Format("Jan 2 15:04"))
 	br.scrn.Draw()
 }
 
@@ -216,4 +216,5 @@ func (br *BossRadio) stop() {
 
 func (br *BossRadio) Destroy() {
 	br.stop()
+	br.scrn.Clear()
 }
