@@ -2,6 +2,7 @@ package bradio
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"time"
 
@@ -209,7 +210,8 @@ func (br *BossRadio) showStatus() {
 func (br *BossRadio) showClock() {
 	now := time.Now()
 	br.scrn.ClearText()
-	br.scrn.SetTextLine(2, "  "+now.Format("Jan 2 15:04"))
+	br.scrn.SetTextLine(1, "  "+now.Format("Jan 2 15:04"))
+	br.scrn.SetTextLine(4, "  "+getIP().String())
 	br.scrn.Draw()
 }
 
@@ -238,4 +240,16 @@ func (br *BossRadio) stop() {
 func (br *BossRadio) Destroy() {
 	br.stop()
 	br.scrn.Clear()
+}
+
+// Get preferred outbound ip of this machine
+func getIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP
 }
