@@ -2,6 +2,7 @@ package bradio
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os/exec"
 	"time"
@@ -12,6 +13,9 @@ import (
 	"github.com/nlacasse/boss-radio/pkg/screen"
 	"github.com/nlacasse/boss-radio/pkg/station"
 )
+
+// Max time to wait before status updates.
+const statusUpdateTime = 30 * time.Second
 
 type state int
 
@@ -33,10 +37,12 @@ type BossRadio struct {
 	remote *remote.Remote
 	scrn   *screen.Screen
 
-	state  state
-	cmd    *exec.Cmd
-	stns   []station.Station
-	stnIdx int
+	state         state
+	cmd           *exec.Cmd
+	stns          []station.Station
+	stnIdx        int
+	curStatus     station.Status
+	curStatusTime time.Time
 }
 
 func NewBossRadio(stns []station.Station) (*BossRadio, error) {
@@ -60,7 +66,11 @@ func (br *BossRadio) turnDial(dt dialTurn) error {
 	if br.stnIdx < 0 {
 		br.stnIdx += len(br.stns)
 	}
-	return br.play()
+	if err := br.play(); err != nil {
+		return err
+	}
+	br.updateStatus()
+	return nil
 }
 
 func (br *BossRadio) turnVolume(delta int) error {
@@ -92,7 +102,11 @@ func (br *BossRadio) power() error {
 
 	// Turning on.
 	br.state = stateOn
-	return br.play()
+	if err := br.play(); err != nil {
+		return err
+	}
+	br.updateStatus()
+	return nil
 }
 
 func (br *BossRadio) isOff() bool {
@@ -113,8 +127,8 @@ func (br *BossRadio) Run() error {
 	// We start in off mode. Just show the clock.
 	br.showClock()
 
-	// Tick every 30 seconds to update the status screen or clock.
-	statusUpdateTicker := time.NewTicker(30 * time.Second)
+	// Tick every 10 seconds to update the status screen or clock.
+	statusUpdateTicker := time.NewTicker(10 * time.Second)
 	defer statusUpdateTicker.Stop()
 
 	for {
@@ -156,7 +170,11 @@ func (br *BossRadio) Run() error {
 			continue
 		}
 
-		// Back to staus screen.
+		// Update status if it's been long enough.
+		if time.Now().After(br.curStatusTime.Add(statusUpdateTime)) {
+			br.updateStatus()
+		}
+
 		br.showStatus()
 	}
 }
@@ -193,16 +211,22 @@ func (br *BossRadio) handleButton(rb remote.Button) error {
 	}
 }
 
+func (br *BossRadio) updateStatus() {
+	log.Print("updateStatus()")
+	stn := br.stns[br.stnIdx]
+	br.curStatus = stn.Status()
+	br.curStatusTime = time.Now()
+}
+
 func (br *BossRadio) showStatus() {
 	stn := br.stns[br.stnIdx]
-	status := stn.Status()
 	br.scrn.SetText([6]string{
 		"     " + stn.Name(),
 		"",
-		status.Show,
-		status.Artist,
-		status.Track,
-		status.Album,
+		br.curStatus.Show,
+		br.curStatus.Artist,
+		br.curStatus.Track,
+		br.curStatus.Album,
 	})
 	br.scrn.Draw()
 }
