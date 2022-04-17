@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"image"
-	_ "image/png"
+	_ "image/gif"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"sync"
 )
 
-//go:embed images/wfmu.png
+//go:embed images/wfmu.gif
 var wfmuLogoBytes []byte
 
 type wfmuStatus struct {
