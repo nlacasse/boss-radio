@@ -133,14 +133,6 @@ func (br *BossRadio) Run() error {
 
 	for {
 		select {
-		case <-statusUpdateTicker.C:
-			if br.isOff() {
-				br.showClock()
-				continue
-			}
-			br.showStatus()
-			continue
-
 		case push := <-pushChan:
 			// Map the PushDirection to remoteButton. We key the behavior off
 			// remote.Button type.
@@ -163,10 +155,14 @@ func (br *BossRadio) Run() error {
 			if err := br.handleButton(rb); err != nil {
 				return err
 			}
+
+		case <-statusUpdateTicker.C:
+			// Refresh screen info below.
 		}
 
-		// Did we turn off?
-		if br.state == stateOff {
+		// Are we off, or did we just turn off?
+		if br.isOff() {
+			br.showClock()
 			continue
 		}
 
