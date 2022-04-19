@@ -2,20 +2,18 @@ package bradio
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os/exec"
 	"time"
 
 	"github.com/itchyny/volume-go"
+
 	"github.com/nlacasse/boss-radio/pkg/button"
+	"github.com/nlacasse/boss-radio/pkg/events"
 	"github.com/nlacasse/boss-radio/pkg/remote"
 	"github.com/nlacasse/boss-radio/pkg/screen"
 	"github.com/nlacasse/boss-radio/pkg/station"
 )
-
-// Max time to wait before status updates.
-const statusUpdateTime = 30 * time.Second
 
 type state int
 
@@ -37,12 +35,11 @@ type BossRadio struct {
 	remote *remote.Remote
 	scrn   *screen.Screen
 
-	state         state
-	cmd           *exec.Cmd
-	stns          []station.Station
-	stnIdx        int
-	curStatus     station.Status
-	curStatusTime time.Time
+	state     state
+	cmd       *exec.Cmd
+	stns      []station.Station
+	stnIdx    int
+	curStatus station.Status
 }
 
 func NewBossRadio(stns []station.Station) (*BossRadio, error) {
@@ -96,7 +93,6 @@ func (br *BossRadio) power() error {
 		br.state = stateOff
 		br.cmd.Process.Kill()
 		br.cmd = nil
-		br.showClock()
 		return nil
 	}
 
@@ -114,104 +110,83 @@ func (br *BossRadio) isOff() bool {
 }
 
 func (br *BossRadio) Run() error {
-	pushChan, err := br.btn.Listen()
-	if err != nil {
+	ch := make(chan events.Event)
+	if err := br.btn.Listen(ch); err != nil {
 		return fmt.Errorf("Button.Listen failed: %w", err)
 	}
-	remoteChan, err := br.remote.Listen()
-	if err != nil {
+	if err := br.remote.Listen(ch); err != nil {
 		return fmt.Errorf("Remote.Listen failed: %w", err)
 	}
 	defer br.stop()
 
-	// We start in off mode. Just show the clock.
-	br.showClock()
-
-	// Tick every 10 seconds to update the status screen or clock.
-	statusUpdateTicker := time.NewTicker(10 * time.Second)
+	// Tick every 30 seconds to update the status screen or clock.
+	statusUpdateTicker := time.NewTicker(30 * time.Second)
 	defer statusUpdateTicker.Stop()
 
 	for {
 		select {
-		case push := <-pushChan:
-			// Map the PushDirection to remoteButton. We key the behavior off
-			// remote.Button type.
-			pushMap := map[button.PushDirection]remote.Button{
-				button.Left:   remote.Left,
-				button.Right:  remote.Right,
-				button.Up:     remote.Up,
-				button.Down:   remote.Down,
-				button.Center: remote.Play,
-			}
-			rb, ok := pushMap[push]
-			if !ok {
-				return fmt.Errorf("unknown push %v", push)
-			}
-			if err := br.handleButton(rb); err != nil {
-				return err
-			}
-
-		case rb := <-remoteChan:
-			if err := br.handleButton(rb); err != nil {
+		case ev := <-ch:
+			if err := br.handleEvent(ev); err != nil {
 				return err
 			}
 
 		case <-statusUpdateTicker.C:
-			// Refresh screen info below.
+			if br.state == stateOn {
+				br.updateStatus()
+			}
 		}
 
-		// Are we off, or did we just turn off?
-		if br.isOff() {
-			br.showClock()
-			continue
-		}
-
-		// Update status if it's been long enough.
-		if time.Now().After(br.curStatusTime.Add(statusUpdateTime)) {
-			br.updateStatus()
-		}
-
-		br.showStatus()
+		br.updateDisplay()
 	}
 }
 
-func (br *BossRadio) handleButton(rb remote.Button) error {
+func (br *BossRadio) handleEvent(ev events.Event) error {
 	// Always handle power button (middle/play).
-	if rb == remote.Play {
+	if ev == events.ButtonCenter || ev == events.RemotePlay {
 		return br.power()
 	}
 
-	// Ignore all other buttons if we are off.
+	// Ignore all other events if we are off.
 	if br.isOff() {
 		return nil
 	}
 
-	// Handle other buttons.
-	switch rb {
-	case remote.Left:
+	// Handle other events.
+	switch ev {
+	case events.ButtonLeft, events.RemoteLeft:
 		return br.turnDial(dialTurnLeft)
-	case remote.Right:
+	case events.ButtonRight, events.RemoteRight:
 		return br.turnDial(dialTurnRight)
-	case remote.Up:
+	case events.ButtonUp, events.RemoteUp:
 		return br.turnVolume(5)
-	case remote.Down:
+	case events.ButtonDown, events.RemoteDown:
 		return br.turnVolume(-5)
-	case remote.Menu:
+	case events.RemoteMenu:
 		// Noop for now.
 		return nil
-	case remote.Play:
+	case events.ButtonCenter, events.RemotePlay:
 		// Already handled above.
 		return nil
 	default:
-		return fmt.Errorf("unknown button push: %v", rb)
+		return fmt.Errorf("unknown event: %v", ev)
 	}
 }
 
 func (br *BossRadio) updateStatus() {
-	log.Print("updateStatus()")
 	stn := br.stns[br.stnIdx]
 	br.curStatus = stn.Status()
-	br.curStatusTime = time.Now()
+}
+
+func (br *BossRadio) updateDisplay() {
+	// Show main screen or clock.
+	switch br.state {
+	case stateOff:
+		br.showClock()
+	case stateOn:
+		br.showStatus()
+	default:
+		panic(fmt.Sprintf("unknown state: %v", br.state))
+	}
 }
 
 func (br *BossRadio) showStatus() {
