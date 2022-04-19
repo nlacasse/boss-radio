@@ -2,6 +2,7 @@ package bradio
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os/exec"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/nlacasse/boss-radio/pkg/remote"
 	"github.com/nlacasse/boss-radio/pkg/screen"
 	"github.com/nlacasse/boss-radio/pkg/station"
+	"github.com/nlacasse/boss-radio/pkg/web"
 )
 
 type state int
@@ -33,6 +35,7 @@ type BossRadio struct {
 	// immutable
 	btn    *button.Button
 	remote *remote.Remote
+	web    *web.Web
 	scrn   *screen.Screen
 
 	state     state
@@ -51,6 +54,7 @@ func NewBossRadio(stns []station.Station) (*BossRadio, error) {
 	return &BossRadio{
 		btn:    button.New(),
 		remote: remote.New(),
+		web:    web.New(),
 		scrn:   scrn,
 		state:  stateOff,
 		stns:   stns,
@@ -117,7 +121,12 @@ func (br *BossRadio) Run() error {
 	if err := br.remote.Listen(ch); err != nil {
 		return fmt.Errorf("Remote.Listen failed: %w", err)
 	}
+	if err := br.web.Listen(ch); err != nil {
+		return fmt.Errorf("Web.Listen failed: %w", err)
+	}
 	defer br.stop()
+
+	br.updateDisplay()
 
 	// Tick every 30 seconds to update the status screen or clock.
 	statusUpdateTicker := time.NewTicker(30 * time.Second)
@@ -126,6 +135,7 @@ func (br *BossRadio) Run() error {
 	for {
 		select {
 		case ev := <-ch:
+			log.Printf("got event %v", ev)
 			if err := br.handleEvent(ev); err != nil {
 				return err
 			}
@@ -173,6 +183,7 @@ func (br *BossRadio) handleEvent(ev events.Event) error {
 }
 
 func (br *BossRadio) updateStatus() {
+	log.Printf("update status")
 	stn := br.stns[br.stnIdx]
 	br.curStatus = stn.Status()
 }
@@ -190,6 +201,7 @@ func (br *BossRadio) updateDisplay() {
 }
 
 func (br *BossRadio) showStatus() {
+	log.Printf("show status")
 	stn := br.stns[br.stnIdx]
 	br.scrn.SetText([6]string{
 		"     " + stn.Name(),
@@ -203,6 +215,7 @@ func (br *BossRadio) showStatus() {
 }
 
 func (br *BossRadio) showClock() {
+	log.Printf("show clock")
 	now := time.Now()
 	br.scrn.ClearText()
 	br.scrn.SetTextLine(1, "  "+now.Format("Jan 2 15:04"))
