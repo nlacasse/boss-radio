@@ -11,7 +11,7 @@ import (
 
 // Codes for Apple A1156.
 var btnMap = map[ir.Key]events.Event{
-	ir.KEY_KPPLUS:      events.RemoteRight,
+	ir.KEY_KPPLUS:      events.RemoteUp,
 	ir.KEY_KPMINUS:     events.RemoteDown,
 	ir.KEY_REWIND:      events.RemoteLeft,
 	ir.KEY_FASTFORWARD: events.RemoteRight,

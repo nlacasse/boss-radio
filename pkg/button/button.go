@@ -26,7 +26,7 @@ func (b *Button) Listen(ch chan<- events.Event) error {
 		events.ButtonCenter: gpioreg.ByName("GPIO15"),
 	}
 
-	for pd, pin := range btns {
+	for ev, pin := range btns {
 		if err := pin.In(gpio.PullUp, gpio.BothEdges); err != nil {
 			return fmt.Errorf("pin.In failed: %v", err)
 		}
@@ -38,10 +38,10 @@ func (b *Button) Listen(ch chan<- events.Event) error {
 			for {
 				edge := dbPin.WaitForEdge(1 * time.Second)
 				if edge && dbPin.Read() == gpio.Low {
-					ch <- pd
+					ch <- ev
 				}
 			}
-		}(pd, dbPin)
+		}(ev, dbPin)
 	}
 
 	return nil
