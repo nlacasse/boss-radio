@@ -9,11 +9,11 @@ import (
 )
 
 var evMap = map[string]events.Event{
-	"left":   events.ButtonLeft,
-	"right":  events.ButtonRight,
-	"up":     events.ButtonUp,
-	"down":   events.ButtonDown,
-	"center": events.ButtonCenter,
+	"prev":     events.ButtonLeft,
+	"next":     events.ButtonRight,
+	"vol_up":   events.ButtonUp,
+	"vol_down": events.ButtonDown,
+	"power":    events.ButtonCenter,
 }
 
 type Web struct{}
@@ -55,11 +55,11 @@ const tpl = `
 	</head>
 	<body>
 		<h1>{{.Station}}</h1>
-		<a href="/center">CENTER</a><br>
-		<a href="/left">LEFT</a><br>
-		<a href="/right">RIGHT</a><br>
-		<a href="/up">UP</a><br>
-		<a href="/down">DOWN</a><br>
+		<a href="/power"><h2>POWER</h2></a><br>
+		<a href="/prev"><h2>PREV</h2></a>
+		<a href="/next"><h2>NEXT</h2></a><br>
+		<a href="/vol_up"><h2>VOL_UP</h2></a>
+		<a href="/vol_down"><h2>VOL_DOWN</h2></a><br>
 	<body>
 </html>
 `
