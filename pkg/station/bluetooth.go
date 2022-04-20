@@ -7,6 +7,7 @@ import (
 	_ "image/gif"
 	"log"
 	"os/exec"
+	"strings"
 )
 
 //go:embed images/bluetooth.gif
@@ -42,5 +43,26 @@ func (bt *Bluetooth) StreamCmd() *exec.Cmd {
 }
 
 func (bt *Bluetooth) Status() Status {
-	return Status{}
+	sc := `bluetoothctl paired-devices |
+cut -f2 -d' '|
+while read -r uuid
+do
+    info=$(bluetoothctl info $uuid)
+	if echo "$info" | grep -q "Connected: yes"; then
+	   echo "$info" | grep "Name" | cut -f2 -d' '
+   fi
+done
+`
+
+	cmd := exec.Command("bash", "-c", sc)
+	out, err := cmd.Output()
+	log.Printf("got bluetooth status %q %v", string(out), err)
+	if err != nil {
+		log.Printf("bluetooth status failed: %v", err)
+		return Status{}
+	}
+
+	return Status{
+		Show: strings.TrimSpace(string(out)),
+	}
 }

@@ -224,7 +224,9 @@ func (br *BossRadio) showClock() {
 	now := time.Now()
 	br.scrn.ClearText()
 	br.scrn.SetTextLine(1, "  "+now.Format("Jan 2 15:04"))
-	br.scrn.SetTextLine(4, "  "+getIP().String())
+	if ip := getIP(); len(ip) > 0 {
+		br.scrn.SetTextLine(4, "  "+ip.String())
+	}
 	br.scrn.Draw()
 }
 
