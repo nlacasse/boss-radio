@@ -55,11 +55,11 @@ const tpl = `
 	</head>
 	<body>
 		<h1>{{.Station}}</h1>
-		<a href="/power"><h2>POWER</h2></a><br>
-		<a href="/prev"><h2>PREV</h2></a>
-		<a href="/next"><h2>NEXT</h2></a><br>
-		<a href="/vol_up"><h2>VOL_UP</h2></a>
-		<a href="/vol_down"><h2>VOL_DOWN</h2></a><br>
+		<a href="/power"><h1>POWER</h1></a><br>
+		<a href="/prev"><h1>PREV</h1></a>
+		<a href="/next"><h1>NEXT</h1></a><br>
+		<a href="/vol_up"><h1>VOL_UP</h1></a>
+		<a href="/vol_down"><h1>VOL_DOWN</h1></a><br>
 	<body>
 </html>
 `
