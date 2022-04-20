@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
-	"sync"
 )
 
 //go:embed images/kfjc-devil.gif
@@ -25,9 +24,6 @@ type kfjcStatus struct {
 
 type Kfjc struct {
 	logo image.Image
-
-	mu  sync.Mutex
-	cmd *exec.Cmd
 }
 
 var _ Station = (*Kfjc)(nil)
@@ -51,8 +47,9 @@ func (kfjc *Kfjc) Logo() image.Image {
 	return kfjc.logo
 }
 
-func (kfjc *Kfjc) Stream() string {
-	return "http://netcast.kfjc.org/kfjc-320k-aac"
+func (kfjc *Kfjc) StreamCmd() *exec.Cmd {
+	str := "http://netcast.kfjc.org/kfjc-320k-aac"
+	return exec.Command("mpv", "-no-video", str)
 }
 
 func (kfjc *Kfjc) Status() Status {

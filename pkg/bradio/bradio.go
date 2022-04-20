@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/itchyny/volume-go"
@@ -203,8 +204,12 @@ func (br *BossRadio) updateDisplay() {
 func (br *BossRadio) showStatus() {
 	log.Printf("show status")
 	stn := br.stns[br.stnIdx]
+	namePad := (14 - len(stn.Name())) / 2
+	if namePad < 0 {
+		namePad = 0
+	}
 	br.scrn.SetText([6]string{
-		"     " + stn.Name(),
+		strings.Repeat(" ", namePad) + stn.Name(),
 		"",
 		br.curStatus.Show,
 		br.curStatus.Artist,
@@ -226,7 +231,7 @@ func (br *BossRadio) showClock() {
 func (br *BossRadio) play() error {
 	stn := br.stns[br.stnIdx]
 	br.stop()
-	br.cmd = exec.Command("mpv", "-no-video", stn.Stream())
+	br.cmd = stn.StreamCmd()
 	if err := br.cmd.Start(); err != nil {
 		return err
 	}

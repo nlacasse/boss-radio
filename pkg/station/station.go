@@ -1,19 +1,24 @@
 package station
 
-import "image"
+import (
+	"image"
+	"os/exec"
+)
 
 var AllStations = []Station{
 	NewKfjc(),
 	NewKxlu(),
 	NewWfmu(),
-	NewWmbr()}
+	NewWmbr(),
+	NewBluetooth(),
+}
 
 type Station interface {
 	Name() string
 
 	Logo() image.Image
 
-	Stream() string
+	StreamCmd() *exec.Cmd
 
 	Status() Status
 }

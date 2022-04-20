@@ -7,7 +7,6 @@ import (
 	_ "image/gif"
 	"log"
 	"os/exec"
-	"sync"
 )
 
 //go:embed images/kxlu.gif
@@ -22,9 +21,6 @@ type kxluStatus struct {
 
 type Kxlu struct {
 	logo image.Image
-
-	mu  sync.Mutex
-	cmd *exec.Cmd
 }
 
 var _ Station = (*Kxlu)(nil)
@@ -48,8 +44,9 @@ func (kxlu *Kxlu) Logo() image.Image {
 	return kxlu.logo
 }
 
-func (kxlu *Kxlu) Stream() string {
-	return "https://kxlu.streamguys1.com/kxlu-hi"
+func (kxlu *Kxlu) StreamCmd() *exec.Cmd {
+	str := "https://kxlu.streamguys1.com/kxlu-hi"
+	return exec.Command("mpv", "-no-video", str)
 }
 
 func (kxlu *Kxlu) Status() Status {

@@ -56,8 +56,9 @@ func (wmbr *Wmbr) Logo() image.Image {
 	return wmbr.logo
 }
 
-func (wmbr *Wmbr) Stream() string {
-	return "https://wmbr.org/WMBR_live_128u.m3u"
+func (wmbr *Wmbr) StreamCmd() *exec.Cmd {
+	str := "https://wmbr.org/WMBR_live_128u.m3u"
+	return exec.Command("mpv", "-no-video", str)
 }
 
 func (wmbr *Wmbr) Status() Status {

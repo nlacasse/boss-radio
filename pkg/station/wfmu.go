@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
-	"sync"
 )
 
 //go:embed images/wfmu.gif
@@ -25,9 +24,6 @@ type wfmuStatus struct {
 
 type Wfmu struct {
 	logo image.Image
-
-	mu  sync.Mutex
-	cmd *exec.Cmd
 }
 
 var _ Station = (*Wfmu)(nil)
@@ -51,8 +47,9 @@ func (wfmu *Wfmu) Logo() image.Image {
 	return wfmu.logo
 }
 
-func (wfmu *Wfmu) Stream() string {
-	return "https://wfmu.org/wfmu.pls"
+func (wfmu *Wfmu) StreamCmd() *exec.Cmd {
+	str := "https://wfmu.org/wfmu.pls"
+	return exec.Command("mpv", "-no-video", str)
 }
 
 func (wfmu *Wfmu) Status() Status {
