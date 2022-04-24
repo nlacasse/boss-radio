@@ -43,7 +43,7 @@ func (w *Web) Listen(ch chan<- events.Event) error {
 		})
 	}
 
-	go http.ListenAndServe(":http", nil)
+	go http.ListenAndServe(":8000", nil)
 	return nil
 }
 
