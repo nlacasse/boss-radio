@@ -115,14 +115,16 @@ func (br *BossRadio) isOff() bool {
 }
 
 func (br *BossRadio) Run() error {
-	ch := make(chan events.Event)
-	if err := br.btn.Listen(ch); err != nil {
+	eventCh := make(chan events.Event)
+	webEventCh := make(chan events.Event)
+	webStatusCh := make(chan web.Status)
+	if err := br.btn.Listen(eventCh); err != nil {
 		return fmt.Errorf("Button.Listen failed: %w", err)
 	}
-	if err := br.remote.Listen(ch); err != nil {
+	if err := br.remote.Listen(eventCh); err != nil {
 		return fmt.Errorf("Remote.Listen failed: %w", err)
 	}
-	if err := br.web.Listen(ch); err != nil {
+	if err := br.web.ListenAndUpdate(webEventCh, webStatusCh); err != nil {
 		return fmt.Errorf("Web.Listen failed: %w", err)
 	}
 	defer br.stop()
@@ -135,15 +137,43 @@ func (br *BossRadio) Run() error {
 
 	for {
 		select {
-		case ev := <-ch:
+		case ev := <-eventCh:
 			log.Printf("got event %v", ev)
 			if err := br.handleEvent(ev); err != nil {
 				return err
 			}
 
+		case ev := <-webEventCh:
+			log.Printf("got web event %v", ev)
+			if err := br.handleEvent(ev); err != nil {
+				return err
+			}
+			if br.state == stateOff {
+				webStatusCh <- web.Status{}
+			} else {
+				stn := br.stns[br.stnIdx]
+				webStatusCh <- web.Status{
+					Power:  true,
+					Name:   stn.Name(),
+					Status: br.curStatus,
+				}
+			}
+
 		case <-statusUpdateTicker.C:
 			if br.state == stateOn {
 				br.updateStatus()
+			}
+
+			// Update web status.
+			if br.state == stateOff {
+				br.web.Update(web.Status{})
+			} else {
+				stn := br.stns[br.stnIdx]
+				br.web.Update(web.Status{
+					Power:  true,
+					Name:   stn.Name(),
+					Status: br.curStatus,
+				})
 			}
 		}
 
@@ -199,6 +229,7 @@ func (br *BossRadio) updateDisplay() {
 	default:
 		panic(fmt.Sprintf("unknown state: %v", br.state))
 	}
+
 }
 
 func (br *BossRadio) showStatus() {

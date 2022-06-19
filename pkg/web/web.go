@@ -3,9 +3,11 @@ package web
 import (
 	"log"
 	"net/http"
+	"sync"
 	"text/template"
 
 	"github.com/nlacasse/boss-radio/pkg/events"
+	"github.com/nlacasse/boss-radio/pkg/station"
 )
 
 var evMap = map[string]events.Event{
@@ -16,34 +18,54 @@ var evMap = map[string]events.Event{
 	"power":    events.ButtonCenter,
 }
 
-type Web struct{}
+type Status struct {
+	Power  bool
+	Name   string
+	Status station.Status
+}
+
+type Web struct {
+	status Status
+	mu     sync.Mutex
+}
 
 func New() *Web {
 	return &Web{}
 }
 
-func (w *Web) Listen(ch chan<- events.Event) error {
+func (w *Web) Update(status Status) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.status = status
+}
+
+func (w *Web) ListenAndUpdate(eventCh chan<- events.Event, statusCh <-chan Status) error {
 	t, err := template.New("FreqM0d").Parse(tpl)
 	if err != nil {
 		return err
 	}
 	http.HandleFunc("/", func(res http.ResponseWriter, _ *http.Request) {
-		if err := t.Execute(res, nil); err != nil {
+		log.Printf("serving /")
+		if err := t.Execute(res, w.status); err != nil {
 			log.Printf("Template failed: %v", err)
 		}
 	})
 	for str, ev := range evMap {
-		// Scope ev.
+		sstr := str
 		sev := ev
-		http.HandleFunc("/"+str, func(res http.ResponseWriter, _ *http.Request) {
-			ch <- sev
-			if err := t.Execute(res, nil); err != nil {
-				log.Printf("Template failed: %v", err)
-			}
+		http.HandleFunc("/"+str, func(res http.ResponseWriter, req *http.Request) {
+			w.mu.Lock()
+			defer w.mu.Unlock()
+			log.Printf("serving /%s", sstr)
+			eventCh <- sev
+			// Wait for return event.
+			w.status = <-statusCh
+			http.Redirect(res, req, "/", 307)
 		})
 	}
 
-	go http.ListenAndServe(":8000", nil)
+	go http.ListenAndserve(":8000", nil)
+
 	return nil
 }
 
@@ -56,14 +78,30 @@ const tpl = `
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 		<link rel="manifest" href="/site.webmanifest">
+		<style type="text/css">
+			body {
+				font-family: monospace;
+			}
+		</style>
+		<meta http-equiv="refresh" content="10" />
 	</head>
 	<body>
-		<h1>{{.Station}}</h1>
-		<a href="/power"><h1>POWER</h1></a><br>
-		<a href="/prev"><h1>PREV</h1></a>
-		<a href="/next"><h1>NEXT</h1></a><br>
-		<a href="/vol_up"><h1>VOL_UP</h1></a>
-		<a href="/vol_down"><h1>VOL_DOWN</h1></a><br>
+		{{if .Power}}
+			<h1>{{.Name}}</h1>
+			<h2>Show: {{.Status.Show}}</h2>
+			<h2>Artist: {{.Status.Artist}}</h2>
+			<h2>Album: {{.Status.Album}}</h2>
+			<br><br>
+			<a href="/prev"><h1>PREV</h1></a>
+			<a href="/next"><h1>NEXT</h1></a>
+			<br>
+			<a href="/vol_up"><h1>VOL_UP</h1></a>
+			<a href="/vol_down"><h1>VOL_DOWN</h1></a>
+			<br>
+			<a href="/power"><h1>TURN OFF</h1></a><br>
+		{{else}}
+			<a href="/power"><h1>TURN ON</h1></a><br>
+		{{end}}
 	<body>
 </html>
 `
