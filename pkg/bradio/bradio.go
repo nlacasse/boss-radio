@@ -88,7 +88,7 @@ func (br *BossRadio) turnVolume(delta int) error {
 	br.scrn.ClearText()
 	br.scrn.SetTextLine(2, fmt.Sprintf("Volume: %d", vol))
 	br.scrn.Draw()
-	time.Sleep(250 * time.Millisecond)
+	br.scrn.Freeze(250 * time.Millisecond)
 	return nil
 }
 
@@ -271,7 +271,7 @@ func (br *BossRadio) play() error {
 
 	// Flash new station logo for a second.
 	br.scrn.DrawImage(stn.Logo())
-	time.Sleep(250 * time.Millisecond)
+	br.scrn.Freeze(250 * time.Millisecond)
 	return nil
 }
 

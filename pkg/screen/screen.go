@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/draw"
 	"sync"
+	"time"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
@@ -44,6 +45,11 @@ func New() (*Screen, error) {
 	}
 	scrn.clearLocked()
 	return scrn, nil
+}
+
+func (s *Screen) Freeze(d time.Duration) {
+	s.mu.Lock()
+	time.AfterFunc(d, s.mu.Unlock)
 }
 
 func (s *Screen) SetText(text [6]string) {

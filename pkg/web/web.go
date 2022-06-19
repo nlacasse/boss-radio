@@ -64,7 +64,7 @@ func (w *Web) ListenAndUpdate(eventCh chan<- events.Event, statusCh <-chan Statu
 		})
 	}
 
-	go http.ListenAndserve(":8000", nil)
+	go http.ListenAndServe(":8000", nil)
 
 	return nil
 }
