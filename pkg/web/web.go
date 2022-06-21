@@ -82,6 +82,12 @@ const tpl = `
 			body {
 				font-family: monospace;
 			}
+			h1 {
+				font-size: 6em;
+			}
+			h2 {
+				font-size: 4em;
+			}
 		</style>
 		<meta http-equiv="refresh" content="10" />
 	</head>
@@ -90,6 +96,7 @@ const tpl = `
 			<h1>{{.Name}}</h1>
 			<h2>Show: {{.Status.Show}}</h2>
 			<h2>Artist: {{.Status.Artist}}</h2>
+			<h2>Track: {{.Status.Track}}</h2>
 			<h2>Album: {{.Status.Album}}</h2>
 			<br><br>
 			<a href="/prev"><h1>PREV</h1></a>
