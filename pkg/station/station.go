@@ -10,6 +10,8 @@ var AllStations = []Station{
 	NewKxlu(),
 	NewWfmu(),
 	NewWmbr(),
+	NewNts1(),
+	NewNts2(),
 	NewBluetooth(),
 }
 
