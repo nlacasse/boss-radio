@@ -81,12 +81,19 @@ const tpl = `
 		<style type="text/css">
 			body {
 				font-family: monospace;
+				background-image: url('/skullfreq.jpg');
+				background-repeat: no-repeat;
+				background-attachment: fixed;
+				background-size: contain;
+				background-color: black;
 			}
 			h1 {
 				font-size: 6em;
+				color:red;
 			}
 			h2 {
 				font-size: 4em;
+				color:red;
 			}
 		</style>
 		<meta http-equiv="refresh" content="10" />
