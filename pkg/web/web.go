@@ -90,10 +90,28 @@ const tpl = `
 			h1 {
 				font-size: 6em;
 				color:red;
+				text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+
 			}
 			h2 {
 				font-size: 4em;
 				color:red;
+				text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+			}
+			a:link {
+			  text-decoration: none;
+			}
+
+			a:visited {
+			  text-decoration: none;
+			}
+
+			a:hover {
+			  text-decoration: none;
+			}
+
+			a:active {
+			  text-decoration: none;
 			}
 		</style>
 		<meta http-equiv="refresh" content="10" />
@@ -101,16 +119,16 @@ const tpl = `
 	<body>
 		{{if .Power}}
 			<h1>{{.Name}}</h1>
-			<h2>Show: {{.Status.Show}}</h2>
-			<h2>Artist: {{.Status.Artist}}</h2>
-			<h2>Track: {{.Status.Track}}</h2>
-			<h2>Album: {{.Status.Album}}</h2>
+			<h2>{{.Status.Show}}</h2>
+			<h2>{{.Status.Artist}}</h2>
+			<h2>{{.Status.Track}}</h2>
+			<h2>{{.Status.Album}}</h2>
 			<br><br>
 			<a href="/prev"><h1>PREV</h1></a>
 			<a href="/next"><h1>NEXT</h1></a>
 			<br>
-			<a href="/vol_up"><h1>VOL_UP</h1></a>
-			<a href="/vol_down"><h1>VOL_DOWN</h1></a>
+			<a href="/vol_up"><h1>VOL UP</h1></a>
+			<a href="/vol_down"><h1>VOL DOWN</h1></a>
 			<br>
 			<a href="/power"><h1>TURN OFF</h1></a><br>
 		{{else}}
