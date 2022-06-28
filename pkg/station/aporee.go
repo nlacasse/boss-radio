@@ -31,7 +31,7 @@ var _ Station = (*Aporee)(nil)
 func NewAporee() *Aporee {
 	logo, _, err := image.Decode(bytes.NewReader(aporeeLogoBytes))
 	if err != nil {
-		log.Fatalf("Could not decode KFJC logo: %w", err)
+		log.Fatalf("Could not decode Aporee logo: %w", err)
 	}
 
 	return &Aporee{
@@ -40,7 +40,7 @@ func NewAporee() *Aporee {
 }
 
 func (aporee *Aporee) Name() string {
-	return "KFJC"
+	return "Aporee"
 }
 
 func (aporee *Aporee) Logo() image.Image {
@@ -74,8 +74,8 @@ func (aporee *Aporee) Status() Status {
 	}
 
 	return Status{
-		Show:   as.Title,
-		Artist: as.Lat,
-		Album:  as.Lng,
+		Show:  as.Title,
+		Track: as.Lat,
+		Album: as.Lng,
 	}
 }
