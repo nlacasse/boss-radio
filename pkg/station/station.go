@@ -12,6 +12,7 @@ var AllStations = []Station{
 	NewWmbr(),
 	NewNts1(),
 	NewNts2(),
+	NewAporee(),
 	NewBluetooth(),
 }
 
