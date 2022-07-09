@@ -25,8 +25,12 @@ type Status struct {
 }
 
 type Web struct {
+	stMu   sync.RWMutex
 	status Status
-	mu     sync.Mutex
+
+	// mu ensures that only one web handler is run at a time. It is not used
+	// for data protection.
+	mu sync.Mutex
 }
 
 func New() *Web {
@@ -34,8 +38,8 @@ func New() *Web {
 }
 
 func (w *Web) Update(status Status) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+	w.stMu.Lock()
+	defer w.stMu.Unlock()
 	w.status = status
 }
 
@@ -46,7 +50,10 @@ func (w *Web) ListenAndUpdate(eventCh chan<- events.Event, statusCh <-chan Statu
 	}
 	http.HandleFunc("/", func(res http.ResponseWriter, _ *http.Request) {
 		log.Printf("serving /")
-		if err := t.Execute(res, w.status); err != nil {
+		w.stMu.RLock()
+		st := w.status
+		defer w.stMu.RUnlock()
+		if err := t.Execute(res, st); err != nil {
 			log.Printf("Template failed: %v", err)
 		}
 	})
@@ -59,7 +66,10 @@ func (w *Web) ListenAndUpdate(eventCh chan<- events.Event, statusCh <-chan Statu
 			log.Printf("serving /%s", sstr)
 			eventCh <- sev
 			// Wait for return event.
-			w.status = <-statusCh
+			st := <-statusCh
+			w.stMu.Lock()
+			w.status = st
+			w.stMu.Unlock()
 			http.Redirect(res, req, "/", 307)
 		})
 	}

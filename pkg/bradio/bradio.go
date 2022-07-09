@@ -160,21 +160,17 @@ func (br *BossRadio) Run() error {
 			}
 
 		case <-statusUpdateTicker.C:
+			st := web.Status{}
 			if br.state == stateOn {
 				br.updateStatus()
-			}
-
-			// Update web status.
-			if br.state == stateOff {
-				br.web.Update(web.Status{})
-			} else {
 				stn := br.stns[br.stnIdx]
-				br.web.Update(web.Status{
+				st = web.Status{
 					Power:  true,
 					Name:   stn.Name(),
 					Status: br.curStatus,
-				})
+				}
 			}
+			br.web.Update(st)
 		}
 
 		br.updateDisplay()
