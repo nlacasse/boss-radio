@@ -48,7 +48,7 @@ func (wfmu *Wfmu) Logo() image.Image {
 }
 
 func (wfmu *Wfmu) StreamCmd() *exec.Cmd {
-	str := "https://wfmu.org/wfmu.pls"
+	str := "http://stream0.wfmu.org/freeform-high.aac"
 	return exec.Command("mpv", "-no-video", str)
 }
 

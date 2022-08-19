@@ -45,7 +45,7 @@ func (kxlu *Kxlu) Logo() image.Image {
 }
 
 func (kxlu *Kxlu) StreamCmd() *exec.Cmd {
-	str := "https://kxlu.streamguys1.com/kxlu-hi"
+	str := "http://kxlu.streamguys1.com/kxlu-hi"
 	return exec.Command("mpv", "-no-video", str)
 }
 

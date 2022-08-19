@@ -48,7 +48,7 @@ func (aporee *Aporee) Logo() image.Image {
 }
 
 func (aporee *Aporee) StreamCmd() *exec.Cmd {
-	str := "http://radio.aporee.org:8000/aporee_high.m3u"
+	str := "http://radio.aporee.org:8000/aporee_high"
 	return exec.Command("mpv", "-no-video", str)
 }
 

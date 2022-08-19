@@ -62,7 +62,7 @@ func NewNts1() *Nts {
 	return &Nts{
 		channel: 1,
 		logo:    logo,
-		stream:  "https://stream-relay-geo.ntslive.net/stream",
+		stream:  "http://stream-relay-geo.ntslive.net/stream",
 	}
 }
 
@@ -75,7 +75,7 @@ func NewNts2() *Nts {
 	return &Nts{
 		channel: 2,
 		logo:    logo,
-		stream:  "https://stream-relay-geo.ntslive.net/stream2",
+		stream:  "http://stream-relay-geo.ntslive.net/stream2",
 	}
 }
 
