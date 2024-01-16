@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	"periph.io/x/conn/v3/gpio"
-	"periph.io/x/conn/v3/gpio/gpioreg"
-	"periph.io/x/conn/v3/gpio/gpioutil"
+	"github.com/warthog618/gpiod"
+	"github.com/warthog618/gpiod/device/rpi"
 
 	"github.com/nlacasse/boss-radio/pkg/events"
 )
+
+const gpiochip = "gpiochip0"
 
 type Button struct{}
 
@@ -18,30 +19,36 @@ func New() *Button {
 }
 
 func (b *Button) Listen(ch chan<- events.Event) error {
-	btns := map[events.Event]gpio.PinIO{
-		events.ButtonLeft:   gpioreg.ByName("GPIO14"),
-		events.ButtonRight:  gpioreg.ByName("GPIO24"),
-		events.ButtonUp:     gpioreg.ByName("GPIO23"),
-		events.ButtonDown:   gpioreg.ByName("GPIO8"),
-		events.ButtonCenter: gpioreg.ByName("GPIO15"),
+	chip, err := gpiod.NewChip(gpiochip)
+	if err != nil {
+		return fmt.Errorf("NewChip(%q) failed: %v", gpiochip, err)
 	}
 
-	for ev, pin := range btns {
-		if err := pin.In(gpio.PullUp, gpio.BothEdges); err != nil {
-			return fmt.Errorf("pin.In failed: %v", err)
-		}
-		dbPin, err := gpioutil.Debounce(pin, 3*time.Millisecond, 30*time.Millisecond, gpio.BothEdges)
+	btns := map[events.Event]string{
+		events.ButtonLeft:   "gpio14",
+		events.ButtonRight:  "gpio24",
+		events.ButtonUp:     "gpio23",
+		events.ButtonDown:   "gpio8",
+		events.ButtonCenter: "gpio15",
+	}
+
+	for ev, pinName := range btns {
+		pin, err := rpi.Pin(pinName)
 		if err != nil {
-			return fmt.Errorf("gpioutil.Debounce failed: %v", err)
+			return fmt.Errorf("error getting pin %q: %v", pinName, err)
 		}
-		go func(ev events.Event, dbPin gpio.PinIO) {
-			for {
-				edge := dbPin.WaitForEdge(1 * time.Second)
-				if edge && dbPin.Read() == gpio.Low {
-					ch <- ev
-				}
-			}
-		}(ev, dbPin)
+		evv := ev
+		handler := func(_ gpiod.LineEvent) {
+			ch <- evv
+		}
+		if _, err := chip.RequestLine(pin,
+			gpiod.AsInput,
+			gpiod.WithPullUp,
+			gpiod.WithFallingEdge,
+			gpiod.WithDebounce(30*time.Millisecond),
+			gpiod.WithEventHandler(handler)); err != nil {
+			return fmt.Errorf("error getting line for pin %q(%d): %v", pinName, pin, err)
+		}
 	}
 
 	return nil
